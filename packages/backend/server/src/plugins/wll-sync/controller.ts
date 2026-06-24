@@ -12,6 +12,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 
+import { Public } from '../../core/auth';
 import { DocReader, DocWriter } from '../../core/doc';
 import { PermissionAccess } from '../../core/permission';
 
@@ -60,6 +61,7 @@ type WllSyncReadMarkdownResponse = {
   unknownBlocks: string[];
 };
 
+@Public()
 @Controller('/api/wll-sync')
 export class WllSyncController {
   constructor(
