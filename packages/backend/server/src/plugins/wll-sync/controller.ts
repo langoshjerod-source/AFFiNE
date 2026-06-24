@@ -1,17 +1,13 @@
 import { timingSafeEqual } from 'node:crypto';
 
-import {
-  BadRequestException,
-  Body,
-  Controller,
-  ForbiddenException,
-  Get,
-  Headers,
-  NotFoundException,
-  Post,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Body, Controller, Get, Headers, Post } from '@nestjs/common';
 
+import {
+  ActionForbidden,
+  AuthenticationRequired,
+  BadRequest,
+  NotFound,
+} from '../../base';
 import { Public } from '../../core/auth';
 import { DocReader, DocWriter } from '../../core/doc';
 import { PermissionAccess } from '../../core/permission';
@@ -126,7 +122,7 @@ export class WllSyncController {
       payload.aiEditable
     );
     if (!result) {
-      throw new NotFoundException('doc not found');
+      throw new NotFound('doc not found');
     }
 
     return { ok: true, docId: payload.docId, ...result };
@@ -135,7 +131,7 @@ export class WllSyncController {
   private assertToken(token: string | undefined) {
     const expected = process.env.WLL_SYNC_TOKEN;
     if (!expected || !token || !safeEqual(token, expected)) {
-      throw new UnauthorizedException('invalid WLL sync token');
+      throw new AuthenticationRequired('invalid WLL sync token');
     }
   }
 
@@ -148,16 +144,16 @@ export class WllSyncController {
     const markdown = body.markdown;
     const editorUserId = body.editorUserId?.trim();
 
-    if (!workspaceId) throw new BadRequestException('workspaceId is required');
-    if (!title) throw new BadRequestException('title is required');
+    if (!workspaceId) throw new BadRequest('workspaceId is required');
+    if (!title) throw new BadRequest('title is required');
     if (title.length > 512) {
-      throw new BadRequestException('title must be 512 characters or fewer');
+      throw new BadRequest('title must be 512 characters or fewer');
     }
     if (markdown === undefined || markdown === null) {
-      throw new BadRequestException('markdown is required');
+      throw new BadRequest('markdown is required');
     }
     if (!editorUserId) {
-      throw new BadRequestException('editorUserId is required');
+      throw new BadRequest('editorUserId is required');
     }
 
     return { workspaceId, docId, title, markdown, editorUserId };
@@ -170,10 +166,10 @@ export class WllSyncController {
     const docId = body.docId?.trim();
     const editorUserId = body.editorUserId?.trim();
 
-    if (!workspaceId) throw new BadRequestException('workspaceId is required');
-    if (!docId) throw new BadRequestException('docId is required');
+    if (!workspaceId) throw new BadRequest('workspaceId is required');
+    if (!docId) throw new BadRequest('docId is required');
     if (!editorUserId) {
-      throw new BadRequestException('editorUserId is required');
+      throw new BadRequest('editorUserId is required');
     }
 
     return {
@@ -190,7 +186,7 @@ export class WllSyncController {
       .workspace(payload.workspaceId)
       .can('Workspace.CreateDoc');
     if (!canCreate) {
-      throw new ForbiddenException(
+      throw new ActionForbidden(
         'editor user cannot create docs in workspace'
       );
     }
@@ -198,14 +194,14 @@ export class WllSyncController {
 
   private async assertCanUpdate(payload: WllSyncUpsertMarkdownPayload) {
     if (!payload.docId) {
-      throw new BadRequestException('docId is required');
+      throw new BadRequest('docId is required');
     }
     const canUpdate = await this.ac
       .user(payload.editorUserId)
       .doc(payload.workspaceId, payload.docId)
       .can('Doc.Update');
     if (!canUpdate) {
-      throw new ForbiddenException('editor user cannot update doc');
+      throw new ActionForbidden('editor user cannot update doc');
     }
   }
 
@@ -215,7 +211,7 @@ export class WllSyncController {
       .doc(payload.workspaceId, payload.docId)
       .can('Doc.Read');
     if (!canRead) {
-      throw new ForbiddenException('editor user cannot read doc');
+      throw new ActionForbidden('editor user cannot read doc');
     }
   }
 }
