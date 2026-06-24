@@ -34,7 +34,7 @@ jobs:
     needs: prepare
     uses: ./.github/workflows/build-images.yml
     with:
-      build-type: wll
+      build-type: canary
       app-version: ${{ needs.prepare.outputs.app-version }}
       git-short-hash: ${{ needs.prepare.outputs.git-short-hash }}
     secrets: inherit
