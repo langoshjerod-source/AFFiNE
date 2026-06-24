@@ -178,6 +178,10 @@ jobs:
           pattern: server-native-*
           merge-multiple: true
           path: ./packages/backend/native
+      - name: Add amd64-only native aliases
+        run: |
+          cp ./packages/backend/native/server-native.x64.node ./packages/backend/native/server-native.arm64.node
+          cp ./packages/backend/native/server-native.x64.node ./packages/backend/native/server-native.armv7.node
       - name: List server-native files
         run: ls -alh ./packages/backend/native
       - name: Build Server
