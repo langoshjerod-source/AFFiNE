@@ -1,0 +1,40 @@
+name: WLL Build AFFiNE Image
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
+      - canary
+
+permissions:
+  contents: write
+  id-token: write
+  packages: write
+
+jobs:
+  prepare:
+    name: Prepare image metadata
+    runs-on: ubuntu-latest
+    outputs:
+      app-version: ${{ steps.meta.outputs.app-version }}
+      git-short-hash: ${{ steps.meta.outputs.git-short-hash }}
+    steps:
+      - uses: actions/checkout@v6
+      - id: meta
+        shell: bash
+        run: |
+          short_hash=$(git rev-parse --short=8 HEAD)
+          echo "git-short-hash=${short_hash}" >> "$GITHUB_OUTPUT"
+          echo "app-version=wll-${short_hash}" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build WLL AFFiNE image
+    needs: prepare
+    uses: ./.github/workflows/build-images.yml
+    with:
+      build-type: wll
+      app-version: ${{ needs.prepare.outputs.app-version }}
+      git-short-hash: ${{ needs.prepare.outputs.git-short-hash }}
+    secrets: inherit
